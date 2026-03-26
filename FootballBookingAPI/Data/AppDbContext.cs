@@ -96,9 +96,10 @@
 
             // ================= IMAGE =================
             builder.Entity<FieldImage>()
-                .HasOne(i => i.Field)
-                .WithMany(f => f.Images)
-                .HasForeignKey(i => i.FieldId);
+                 .HasOne(i => i.Field)
+                 .WithMany(f => f.Images)
+                 .HasForeignKey(i => i.FieldId)
+                 .OnDelete(DeleteBehavior.Cascade);
 
             // ================= SCHEDULE =================
             builder.Entity<FieldSchedule>()
@@ -107,7 +108,7 @@
                 .HasForeignKey(s => s.FieldId);
             // ================= UNIQUE INDEX =================
             builder.Entity<Booking>()
-    .HasIndex(b => new { b.FieldId, b.BookingDate, b.StartTime, b.EndTime });
+                 .HasIndex(b => new { b.FieldId, b.BookingDate, b.StartTime, b.EndTime });
 
         }
     }

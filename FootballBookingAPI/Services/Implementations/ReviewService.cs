@@ -6,7 +6,7 @@
     using Microsoft.EntityFrameworkCore;
 namespace FootballBookingAPI.Services.Implementations
 {
-   
+
 
     public class ReviewService : IReviewService
     {
@@ -19,11 +19,8 @@ namespace FootballBookingAPI.Services.Implementations
 
         public async Task<bool> CreateAsync(string userId, CreateReviewRequest request)
         {
-            var exists = await _context.Reviews
-                .AnyAsync(r => r.UserId == userId && r.FieldId == request.FieldId);
-
-            if (exists)
-                throw new Exception("Already reviewed");
+            if (request.Rating < 1 || request.Rating > 5)
+                return false;
 
             var review = new Review
             {
@@ -35,8 +32,20 @@ namespace FootballBookingAPI.Services.Implementations
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
-
             return true;
+        }
+
+        public async Task<List<object>> GetByFieldAsync(int fieldId)
+        {
+            return await _context.Reviews
+                .Where(r => r.FieldId == fieldId)
+                .Select(r => new
+                {
+                    r.Rating,
+                    r.Comment,
+                    r.CreatedAt
+                })
+                .ToListAsync<object>();
         }
     }
 }

@@ -4,6 +4,6 @@ namespace FootballBookingAPI.Services.Interfaces
 {
     public interface IPaymentService
     {
-        Task<PaymentResponse> PayAsync(int bookingId);
+        Task<PaymentResponse> PayAsync(string userId, PaymentRequest request);
     }
 }

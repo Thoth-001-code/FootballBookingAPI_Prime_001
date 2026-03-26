@@ -7,5 +7,8 @@
         public string Location { get; set; }
         public decimal PricePerHour { get; set; }
         public string Status { get; set; }
+
+        public List<string> Images { get; set; } = new();
+        public double AverageRating { get; set; }
     }
 }

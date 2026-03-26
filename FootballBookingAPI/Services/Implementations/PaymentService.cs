@@ -7,7 +7,7 @@
 
 namespace FootballBookingAPI.Services.Implementations
 {
-   
+
 
     public class PaymentService : IPaymentService
     {
@@ -18,35 +18,26 @@ namespace FootballBookingAPI.Services.Implementations
             _context = context;
         }
 
-        public async Task<PaymentResponse> PayAsync(int bookingId)
+        public async Task<PaymentResponse> PayAsync(string userId, PaymentRequest request)
         {
             var booking = await _context.Bookings
-                .Include(b => b.Payment)
-                .FirstOrDefaultAsync(b => b.Id == bookingId);
+                .FirstOrDefaultAsync(b => b.Id == request.BookingId && b.UserId == userId);
 
-            if (booking == null)
-                throw new Exception("Booking not found");
-
-            if (booking.Payment != null)
-                throw new Exception("Already paid");
+            if (booking == null) throw new Exception("Booking not found");
 
             var payment = new Payment
             {
-                BookingId = bookingId,
+                BookingId = booking.Id,
                 Amount = booking.TotalPrice,
                 Status = PaymentStatus.Paid
             };
 
             _context.Payments.Add(payment);
-
-            booking.Status = BookingStatus.Confirmed;
-
             await _context.SaveChangesAsync();
 
             return new PaymentResponse
             {
                 Id = payment.Id,
-                BookingId = bookingId,
                 Amount = payment.Amount,
                 Status = payment.Status.ToString()
             };

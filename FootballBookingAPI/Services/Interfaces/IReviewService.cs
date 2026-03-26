@@ -5,5 +5,6 @@ namespace FootballBookingAPI.Services.Interfaces
     public interface IReviewService
     {
         Task<bool> CreateAsync(string userId, CreateReviewRequest request);
+        Task<List<object>> GetByFieldAsync(int fieldId);
     }
 }

@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-   using FootballBookingAPI.DTOs.Field;
+﻿   using FootballBookingAPI.DTOs.Field;
+using FootballBookingAPI.Models;
     using FootballBookingAPI.Services.Interfaces;
     using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
     
     using System.Security.Claims;
 namespace FootballBookingAPI.Controllers
@@ -15,10 +17,11 @@ namespace FootballBookingAPI.Controllers
     public class FieldController : ControllerBase
     {
         private readonly IFieldService _service;
-
-        public FieldController(IFieldService service)
+        private readonly IFieldService _fieldService;
+        public FieldController(IFieldService service, IFieldService fieldService)
         {
             _service = service;
+            _fieldService = fieldService;
         }
 
         // ================= USER =================
@@ -47,7 +50,7 @@ namespace FootballBookingAPI.Controllers
             var result = await _service.CreateAsync(userId, request);
             return Ok(result);
         }
-
+        // owner cập nhật sân, chỉ cập nhật khi sân đang pending hoặc đã bị reject
         [Authorize(Roles = "Owner")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UpdateFieldRequest request)
@@ -58,7 +61,7 @@ namespace FootballBookingAPI.Controllers
             if (!success) return Forbid();
             return Ok();
         }
-
+        // owner xóa sân, chỉ xóa khi chưa có booking nào hoặc tất cả booking đều đã hủy
         [Authorize(Roles = "Owner")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -80,7 +83,7 @@ namespace FootballBookingAPI.Controllers
             if (!success) return NotFound();
             return Ok();
         }
-
+        // admin reject sân
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/reject")]
         public async Task<IActionResult> Reject(int id)
@@ -89,13 +92,14 @@ namespace FootballBookingAPI.Controllers
             if (!success) return NotFound();
             return Ok();
         }
-
+        // admin xem tất cả sân, kể cả pending/rejected
         [Authorize(Roles = "Admin")]
         [HttpGet("admin")]
         public async Task<IActionResult> GetAllForAdmin()
         {
             return Ok(await _service.GetAllForAdminAsync());
         }
+        // ================= OTHER =================
         [Authorize(Roles = "Owner")]
         [HttpGet("my-fields")]
         public async Task<IActionResult> GetMyFields()
@@ -103,5 +107,13 @@ namespace FootballBookingAPI.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Ok(await _service.GetMyFieldsAsync(userId));
         }
+        // tìm kiếm sân theo keyword, location, price range, pagination, sorting
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] FieldQueryRequest request)
+        {
+            var result = await _fieldService.SearchAsync(request);
+            return Ok(result);
+        }
+
     }
 }

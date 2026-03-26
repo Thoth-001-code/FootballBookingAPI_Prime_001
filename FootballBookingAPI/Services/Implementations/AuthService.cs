@@ -32,15 +32,25 @@ namespace FootballBookingAPI.Services.Implementations
             if (!result.Succeeded)
                 throw new Exception("Register failed");
 
-            await _userManager.AddToRoleAsync(user, "User");
+            // 🎯 VALIDATE ROLE
+            var role = request.Role?.ToLower();
 
-            var token = _jwtHelper.GenerateToken(user.Id, user.Email, "User");
+            if (role != "owner")
+                role = "user";
+
+            var finalRole = role == "owner" ? "Owner" : "User";
+
+            // 🎯 ADD ROLE
+            await _userManager.AddToRoleAsync(user, finalRole);
+
+            // 🎯 TOKEN ĐÚNG ROLE
+            var token = _jwtHelper.GenerateToken(user.Id, user.Email, finalRole);
 
             return new AuthResponse
             {
                 Token = token,
                 Email = user.Email,
-                Role = "User"
+                Role = finalRole
             };
         }
 

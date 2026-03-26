@@ -1,5 +1,6 @@
 ﻿using FootballBookingAPI.Data;
-    using FootballBookingAPI.DTOs.Field;
+using FootballBookingAPI.DTOs.Common;
+using FootballBookingAPI.DTOs.Field;
     using FootballBookingAPI.Models;
     using FootballBookingAPI.Services.Interfaces;
     using Microsoft.EntityFrameworkCore;
@@ -44,7 +45,7 @@ namespace FootballBookingAPI.Services.Implementations
                 Status = field.Status.ToString()
             };
         }
-
+        // Chỉ trả về những sân đã được duyệt
         public async Task<List<FieldResponse>> GetAllAsync()
         {
             return await _context.Fields
@@ -55,25 +56,37 @@ namespace FootballBookingAPI.Services.Implementations
                     Name = f.Name,
                     Location = f.Location,
                     PricePerHour = f.PricePerHour,
-                    Status = f.Status.ToString()
+                    Status = f.Status.ToString(),
+
+                    Images = f.Images.Select(i => i.ImageUrl).ToList(),
+
+                    AverageRating = f.Reviews.Any()
+                        ? f.Reviews.Average(r => r.Rating)
+                        : 0
                 })
                 .ToListAsync();
         }
 
+        // Chỉ trả về những sân đã được duyệt
         public async Task<FieldResponse?> GetByIdAsync(int id)
         {
-            var f = await _context.Fields.FindAsync(id);
-            if (f == null || f.Status != FieldStatus.Approved)
-                return null;
+            return await _context.Fields
+                .Where(f => f.Id == id && f.Status == FieldStatus.Approved)
+                .Select(f => new FieldResponse
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    Location = f.Location,
+                    PricePerHour = f.PricePerHour,
+                    Status = f.Status.ToString(),
 
-            return new FieldResponse
-            {
-                Id = f.Id,
-                Name = f.Name,
-                Location = f.Location,
-                PricePerHour = f.PricePerHour,
-                Status = f.Status.ToString()
-            };
+                    Images = f.Images.Select(i => i.ImageUrl).ToList(),
+
+                    AverageRating = f.Reviews.Any()
+                        ? f.Reviews.Average(r => r.Rating)
+                        : 0
+                })
+                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> UpdateAsync(int id, string ownerId, UpdateFieldRequest request)
@@ -133,7 +146,13 @@ namespace FootballBookingAPI.Services.Implementations
                     Name = f.Name,
                     Location = f.Location,
                     PricePerHour = f.PricePerHour,
-                    Status = f.Status.ToString()
+                    Status = f.Status.ToString(),
+
+                    Images = f.Images.Select(i => i.ImageUrl).ToList(),
+
+                    AverageRating = f.Reviews.Any()
+                        ? f.Reviews.Average(r => r.Rating)
+                        : 0
                 })
                 .ToListAsync();
         }
@@ -148,9 +167,84 @@ namespace FootballBookingAPI.Services.Implementations
                     Name = f.Name,
                     Location = f.Location,
                     PricePerHour = f.PricePerHour,
-                    Status = f.Status.ToString()
+                    Status = f.Status.ToString(),
+
+                    Images = f.Images.Select(i => i.ImageUrl).ToList(),
+
+                    AverageRating = f.Reviews.Any()
+                        ? f.Reviews.Average(r => r.Rating)
+                        : 0
                 })
                 .ToListAsync();
+        }
+        // Tìm kiếm với nhiều điều kiện: keyword, location, price range, sort by price/rating
+        public async Task<PagedResult<FieldResponse>> SearchAsync(FieldQueryRequest request)
+        {
+            var query = _context.Fields
+                .AsNoTracking()
+                .Where(f => f.Status == FieldStatus.Approved)
+                .AsQueryable();
+
+            // 🔍 SEARCH
+            if (!string.IsNullOrEmpty(request.Keyword))
+            {
+                query = query.Where(f => f.Name.Contains(request.Keyword));
+            }
+
+            if (!string.IsNullOrEmpty(request.Location))
+            {
+                query = query.Where(f => f.Location.Contains(request.Location));
+            }
+
+            // 💰 FILTER PRICE
+            if (request.MinPrice.HasValue)
+            {
+                query = query.Where(f => f.PricePerHour >= request.MinPrice.Value);
+            }
+
+            if (request.MaxPrice.HasValue)
+            {
+                query = query.Where(f => f.PricePerHour <= request.MaxPrice.Value);
+            }
+
+            // ⭐ SORT
+            query = request.Sort switch
+            {
+                "price_asc" => query.OrderBy(f => f.PricePerHour),
+                "price_desc" => query.OrderByDescending(f => f.PricePerHour),
+                "rating" => query.OrderByDescending(f => f.Reviews.Average(r => (double?)r.Rating) ?? 0),
+                _ => query.OrderByDescending(f => f.Id)
+            };
+
+            var totalItems = await query.CountAsync();
+
+            // 📄 PAGINATION
+            var items = await query
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(f => new FieldResponse
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    Location = f.Location,
+                    PricePerHour = f.PricePerHour,
+                    Status = f.Status.ToString(),
+
+                    Images = f.Images.Select(i => i.ImageUrl).ToList(),
+
+                    AverageRating = f.Reviews.Any()
+                        ? f.Reviews.Average(r => r.Rating)
+                        : 0
+                })
+                .ToListAsync();
+
+            return new PagedResult<FieldResponse>
+            {
+                Items = items,
+                TotalItems = totalItems,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
     }
 }

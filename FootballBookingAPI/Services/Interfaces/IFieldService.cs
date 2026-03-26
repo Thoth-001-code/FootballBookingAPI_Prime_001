@@ -1,5 +1,6 @@
 ﻿
-    using FootballBookingAPI.DTOs.Field;
+using FootballBookingAPI.DTOs.Common;
+using FootballBookingAPI.DTOs.Field;
 
 namespace FootballBookingAPI.Services.Interfaces
 {
@@ -16,5 +17,6 @@ namespace FootballBookingAPI.Services.Interfaces
         Task<List<FieldResponse>> GetMyFieldsAsync(string ownerId);
         Task<bool> ApproveAsync(int id);
         Task<bool> RejectAsync(int id);
+        Task<PagedResult<FieldResponse>> SearchAsync(FieldQueryRequest request);
     }
 }
