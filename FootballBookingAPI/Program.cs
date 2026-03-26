@@ -25,6 +25,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFieldService, FieldService>();
 builder.Services.AddScoped<JwtHelper>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+
 
 // ================= JWT =================
 // 🔷 JWT

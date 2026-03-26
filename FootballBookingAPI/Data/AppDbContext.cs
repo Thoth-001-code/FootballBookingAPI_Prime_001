@@ -105,6 +105,10 @@
                 .HasOne(s => s.Field)
                 .WithMany(f => f.Schedules)
                 .HasForeignKey(s => s.FieldId);
+            // ================= UNIQUE INDEX =================
+            builder.Entity<Booking>()
+    .HasIndex(b => new { b.FieldId, b.BookingDate, b.StartTime, b.EndTime });
+
         }
     }
 }

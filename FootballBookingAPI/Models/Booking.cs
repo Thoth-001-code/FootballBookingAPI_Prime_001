@@ -12,8 +12,10 @@ namespace FootballBookingAPI.Models
         public int FieldId { get; set; }
         public Field Field { get; set; } = null!;
 
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        // ================= CHANGE =================
+        public DateTime BookingDate { get; set; }      // chỉ ngày
+        public TimeSpan StartTime { get; set; }       // giờ bắt đầu
+        public TimeSpan EndTime { get; set; }         // giờ kết thúc
 
         public decimal TotalPrice { get; set; }
 
